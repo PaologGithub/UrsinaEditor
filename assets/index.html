@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{TITLE}}</title>
+  <link rel="shortcut icon" href="{{LOGO}}" type="image/png">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Roboto" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+  <style type="text/css">
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #181818;
+      font-family: Roboto, sans-serif;
+      color: #eee;
+    }
+
+    #header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50px;
+      background-color: #111;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+    }
+
+    #header-left {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    #header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Menu buttons ── */
+    .menu-btn {
+      min-width: unset;
+      background: transparent;
+      border: none;
+      color: #eee;
+      font-family: Roboto, sans-serif;
+      font-size: 13px;
+      font-weight: normal;
+      padding: 8px 14px;
+      margin: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      position: relative;
+    }
+    .menu-btn:hover  { background-color: #2a2a2a; }
+    .menu-btn:active { background-color: #333; }
+    .menu-btn:disabled { color: #555; background: transparent; cursor: default; }
+
+    /* ── Dropdown panels ── */
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 50px;
+      left: 0;
+      min-width: 180px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      z-index: 100;
+      flex-direction: column;
+    }
+    .menu-btn:focus .menu-dropdown,
+    .menu-btn.open   .menu-dropdown {
+      display: flex;
+    }
+    .menu-dropdown a {
+      display: block;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #eee;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .menu-dropdown a:hover { background: #2a2a2a; }
+    .menu-dropdown .separator {
+      height: 1px;
+      background: #333;
+      margin: 4px 0;
+    }
+
+    /* ── Main area: sits between header and credits ── */
+    #main-area {
+      position: absolute;
+      top: 50px; bottom: 35px;
+      left: 0; right: 0;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    /* ── Left panel: canvas + console ── */
+    #panel-output {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* ── Right panel: code editor ── */
+    #panel-input {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+    }
+
+    #editor {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+    }
+
+    /* ── Canvas: grows to fill left panel minus console ── */
+    #canvas {
+      display: block;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: #000;
+      z-index: 0;
+      cursor: default;
+    }
+
+    /* ── Loading overlay: covers just the canvas area ── */
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 50%;
+      bottom: calc(35px + 150px);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d0d;
+      pointer-events: none;
+    }
+
+    #overlay img#logo-overlay {
+      position: absolute;
+      top: 22%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 160px;
+      opacity: .85;
+    }
+
+    #center-ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .spinner {
+      height: 32px;
+      width: 32px;
+      margin: 0 0 14px 0;
+      animation: spin .8s linear infinite;
+      border: 4px solid #333;
+      border-top-color: #39f;
+      border-radius: 50%;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #status {
+      font-weight: 700;
+      font-size: 13px;
+      color: #787878;
+      text-align: center;
+    }
+
+    #ldbar-outer {
+      display: inline-block;
+      background-color: #333;
+      margin-top: 12px;
+      height: 6px;
+      width: 260px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #ldbar {
+      background-color: #39f;
+      width: 0%;
+      height: 100%;
+      transition: width .15s ease;
+    }
+
+    /* ── Console: fixed height at the bottom of the left panel ── */
+    #console {
+      display: block;
+      height: 150px;
+      flex-shrink: 0;
+      width: 100%;
+      padding: 4px 6px;
+      overflow-y: auto;
+      background: #181818;
+      white-space: pre-wrap;
+      font-size: 12px;
+      z-index: 15;
+      position: relative;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+    #console .warning { color: gold; }
+    #console .error   { color: #f55; }
+
+    /* ── Credits bar ── */
+    #credits {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 35px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      background-color: #111;
+      font-size: 10pt;
+      z-index: 25;
+    }
+
+    a { color: #eee; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Buttons ── */
+    button {
+      min-width: 130px;
+      background-color: #39f;
+      border: none;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+      padding: 8px 12px;
+      margin: 0 4px;
+      font-family: Roboto, sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover    { background-color: #4af; }
+    button:active   { background-color: #28e; }
+    button:disabled { background-color: #555; cursor: default; }
+  </style>
+
+  <script type="text/javascript">
+    var defaultCode = [
+      'from ursina import *',
+      'from browser import window as htmlwindow',
+      '# Initialize ursina app',
+      'app = Ursina(editor_ui_enabled=False)',
+      '# Window settings',
+      'window.exit_button.enabled = False',
+      '# window.size = Vec2(480, 1080)',
+      'window.color = color.hex("#851be2")',
+      '# Widget',
+      'Text("Ursina for\\nMobile", scale=2, position=(.1, .4), origin=(0, 0))',
+      'Entity(model="quad.ursinamesh", scale=.1, position=(-.1, .4), origin=(0, 0), texture="ursina", parent=camera.ui)',
+      'Text("Default app", position=(.0, .32), origin=(0, 0))',
+      'cube = Entity(model="cube.ursinamesh", scale=.1, position=(0, 0), origin=(0, 0), color=color.red, parent=camera.ui)',
+      'main_button = Button("Change background color", color=color.lime, pressed_color=color.yellow, origin=(0, 0), position=(0, -.3), scale=(.4, .07), text_color=color.gray) # type: ignore',
+      '# Change window color to random color on button click',
+      'def changeBackground():',
+      '    window.color = color.random_color()',
+      '# Make cube rotating',
+      'def update():',
+      '    cube.rotation += Vec3(1, 1, 0)',
+      '# Add the onclick event',
+      'main_button.on_click = changeBackground',
+      '# Run your app',
+      '#app.run()'
+    ].join('\n');
+
+    function runCode() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("canvas").style.display  = "block";
+
+      var stopFunc = Module.cwrap('stopPythonCode', 'number');
+      stopFunc();
+
+      document.getElementById("console").innerHTML = '';
+      var runFunc = Module.cwrap('runPythonCode', 'number', ['string'], {async: true});
+      runFunc(editor.getValue());
+    }
+
+    function stopCode() {
+      var stopFunc = Module.cwrap('stopPythonCode', 'number');
+      stopFunc();
+      document.getElementById('stop-button').disabled = true;
+    }
+  </script>
+</head>
+
+<body>
+
+  <div id="header">
+    <!-- Left: File / Edit menus -->
+    <div id="header-left">
+
+      <button class="menu-btn" id="menu-file" onclick="toggleMenu('menu-file')">
+        File
+        <div class="menu-dropdown" id="dropdown-file">
+          <a onclick="newFile()">New</a>
+          <a onclick="openFile()">Open...</a>
+          <a onclick="saveFile()">Save</a>
+          <div class="separator"></div>
+          <a onclick="resetToDefault()">Reset to default</a>
+          <div class="separator"></div>
+          <a onclick="includeAssets()">Include assets...</a>
+        </div>
+      </button>
+
+      <button class="menu-btn" id="menu-edit" onclick="toggleMenu('menu-edit')">
+        Edit
+        <div class="menu-dropdown" id="dropdown-edit">
+          <a onclick="editor.execCommand('undo')">Undo</a>
+          <a onclick="editor.execCommand('redo')">Redo</a>
+          <div class="separator"></div>
+          <a onclick="editor.execCommand('selectall')">Select All</a>
+          <div class="separator"></div>
+          <a onclick="editor.setTheme(prompt('Enter a theme'))">Change Theme</a>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- Right: action buttons -->
+    <div id="header-right">
+      <button id="play-button" onclick="runCode()" disabled>
+        <i class="fa fa-play"></i> Run Code
+      </button>
+      <button id="stop-button" onclick="stopCode()" disabled>
+        <i class="fa fa-stop"></i> Stop
+      </button>
+      <button id="fullscreen-button" onclick="Module.requestFullScreen(false, false)" disabled>
+        <i class="fa fa-arrows-alt"></i> Fullscreen
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── Main area (flex row) ── -->
+  <div id="main-area">
+
+  <!-- ── Left panel ── -->
+  <div id="panel-output">
+
+    <!-- Loading overlay -->
+    <div id="overlay">
+      <img id="logo-overlay" src="{{LOGO}}" alt="{{TITLE}}">
+      <div id="center-ui">
+        <div class="spinner" id="spinner"></div>
+        <div id="status">Loading...</div>
+        <div id="ldbar-outer"><div id="ldbar"></div></div>
+      </div>
+    </div>
+
+    <!-- Ursina / Panda3D canvas -->
+    <canvas id="canvas"
+            style="display:none;"
+            oncontextmenu="event.preventDefault()"
+            tabindex="-1"></canvas>
+
+    <!-- Python console output -->
+    <div id="console" class="ace_editor ace-monokai ace_scroller"></div>
+
+  </div>
+
+  <!-- ── Right panel: Ace editor ── -->
+  <div id="panel-input">
+    <pre id="editor"></pre>
+  </div>
+
+  </div><!-- /#main-area -->
+
+  <!-- ── Credits ── -->
+  <div id="credits">
+    Powered by
+    <a href="https://www.ursinaengine.org/" target="_blank">Ursina</a>,&nbsp;
+    <a href="https://www.panda3d.org/" target="_blank">Panda3D</a>,&nbsp;
+    <a href="https://kripken.github.io/emscripten-site/" target="_blank">Emscripten</a> and
+    <a href="https://ace.c9.io/" target="_blank">Ace</a>
+  </div>
+
+  <!-- ── Ace editor init ── -->
+  <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
+  <script>
+    document.getElementById('editor').innerHTML =
+      localStorage.getItem("editor-contents") || defaultCode;
+
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/python");
+    editor.session.on('change', function() {
+      localStorage.setItem("editor-contents", editor.getValue());
+    });
+
+    function toggleMenu(id) {
+      var all = document.querySelectorAll('.menu-btn');
+      all.forEach(function(btn) {
+        if (btn.id !== id) btn.classList.remove('open');
+      });
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.menu-btn')) {
+        document.querySelectorAll('.menu-btn').forEach(function(btn) {
+          btn.classList.remove('open');
+        });
+      }
+    });
+
+    function newFile() {
+      editor.setValue('');
+      editor.focus();
+    }
+
+    function openFile() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.py';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function(ev) { editor.setValue(ev.target.result); };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function saveFile() {
+      var blob = new Blob([editor.getValue()], { type: 'text/plain' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'main.py';
+      a.click();
+    }
+
+    function resetToDefault() {
+      editor.setValue(defaultCode);
+      localStorage.removeItem('editor-contents');
+    }
+
+    function includeAssets() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.onchange = function(e) {
+        var files = Array.from(e.target.files);
+        files.forEach(function(file) {
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            var data = new Uint8Array(ev.target.result);
+            var path = '/assets/game_assets/' + file.name;
+
+            FS.writeFile(path, data);
+            console.log('Wrote ' + path + ' (' + data.length + ' bytes)');
+          };
+          reader.readAsArrayBuffer(file);
+        });
+      };
+      input.click();
+    }
+  </script>
+
+  <!-- ── Emscripten Module + loader ── -->
+  <script type="text/javascript">
+    var EMSCRIPTEN_ASM = 'editor.js';
+    var ASM_SIZE = 352844;
+
+    var statusElement  = document.getElementById("status");
+    var spinnerElement = document.getElementById("spinner");
+    var ldbar          = document.getElementById("ldbar");
+
+    var Module = {
+      preRun:  [],
+      postRun: [function() {
+        var overlay = document.getElementById("overlay");
+        if (overlay) overlay.style.display = "none";
+      }],
+
+      print: (function() {
+        var el = document.getElementById('console');
+        return function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          el.innerHTML += '<samp>' + text + '\n</samp>';
+          el.scrollTop = el.scrollHeight;
+        };
+      })(),
+
+      printErr: (function() {
+        var el = document.getElementById('console');
+        return function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          var cls;
+          if ((text[0] === ':' && text.indexOf('(warning): ') !== -1) || text.indexOf('WARNING:') === 0) {
+            cls = 'warning';
+          } else if ((text[0] === ':' && text.indexOf('(error): ') !== -1) ||
+                     text.indexOf('ERROR:') === 0 ||
+                     text === 'Traceback (most recent call last):' ||
+                     text.indexOf('Error: ') > 1 ||
+                     text.indexOf('Exception: ') > 1 ||
+                     text.indexOf('  File "') === 0) {
+            cls = 'error';
+          }
+          el.innerHTML += cls
+            ? '<samp class="' + cls + '">' + text + '\n</samp>'
+            : '<samp>' + text + '\n</samp>';
+          el.scrollTop = el.scrollHeight;
+        };
+      })(),
+
+      canvas: (function() {
+        var canvas = document.getElementById('canvas');
+        canvas.contentEditable = true;
+        canvas.setAttribute("tabindex", "0");
+        canvas.addEventListener('mouseenter', function() { canvas.focus(); }, false);
+        return canvas;
+      })(),
+
+      setStatus: function(text) {
+        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: "" };
+        if (text === Module.setStatus.last.text) return;
+
+        var match = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        var now   = Date.now();
+        if (match && now - Module.setStatus.last.time < 30) return;
+
+        Module.setStatus.last.time = now;
+        Module.setStatus.last.text = text;
+
+        if (match) {
+          statusElement.innerHTML    = match[1];
+          ldbar.style.width          = (100 * parseInt(match[2]) / parseInt(match[4])) + '%';
+          spinnerElement.style.display = '';
+        } else {
+          if (!text) spinnerElement.style.display = 'none';
+          statusElement.innerHTML = text;
+        }
+
+        if (text === 'Done!') {
+          statusElement.innerHTML = 'Click "Run Code" to begin.';
+          spinnerElement.style.display = 'none';
+          document.getElementById('ldbar-outer').style.display = 'none';
+          document.getElementById('play-button').disabled       = false;
+          document.getElementById('stop-button').disabled       = false;
+          document.getElementById('fullscreen-button').disabled = false;
+        }
+      },
+
+      totalDependencies: 0,
+      monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left
+          ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')'
+          : 'All downloads complete.');
+      }
+    };
+
+    Module.setStatus('Downloading...');
+
+    window.onerror = function() {
+      Module.setStatus('Exception thrown, see JavaScript console');
+      spinnerElement.style.display = 'none';
+      Module.setStatus = function(t) {
+        if (t) Module.printErr('[post-exception status] ' + t);
+      };
+    };
+
+    // Load the Emscripten asm.js bundle
+    (function sendreq() {
+      statusElement.innerHTML = "Downloading application...";
+      var req = new XMLHttpRequest();
+      req.onprogress = function(evt) {
+        ldbar.style.width = ((evt.loaded / ASM_SIZE) * 100) + '%';
+      };
+      req.open('GET', EMSCRIPTEN_ASM, true);
+      req.onreadystatechange = function() {
+        if (req.readyState === 4) {
+          Module.setStatus("Loading...");
+          setTimeout(function() {
+            var blob   = new Blob([req.responseText], { type: 'text/javascript' });
+            var script = document.createElement("script");
+            script.type  = "text/javascript";
+            script.async = true;
+            script.defer = true;
+            script.src   = URL.createObjectURL(blob);
+            document.body.appendChild(script);
+          }, 0);
+        }
+      };
+      req.send();
+    })();
+  </script>
+
+</body>
+</html>
