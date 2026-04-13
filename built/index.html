@@ -5,6 +5,7 @@
   <link rel="shortcut icon" href="logo.png" type="image/png">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Roboto" />
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/ansi_up@5.1.0/ansi_up.min.js"></script>
   <style type="text/css">
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -501,8 +502,9 @@
         var el = document.getElementById('console');
         return function(text) {
           if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          el.innerHTML += '<samp>' + text + '\n</samp>';
+          var ansi_up = new AnsiUp();
+          text = ansi_up.ansi_to_html(text);
+          el.innerHTML += '<samp>' + text + '</samp>';
           el.scrollTop = el.scrollHeight;
         };
       })(),
