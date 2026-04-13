@@ -490,6 +490,7 @@
     var statusElement  = document.getElementById("status");
     var spinnerElement = document.getElementById("spinner");
     var ldbar          = document.getElementById("ldbar");
+    var ansi_up = new AnsiUp();
 
     var Module = {
       preRun:  [],
@@ -501,10 +502,12 @@
       print: (function() {
         var el = document.getElementById('console');
         return function(text) {
-          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          var ansi_up = new AnsiUp();
+          if (arguments.length > 1)
+            text = Array.prototype.slice.call(arguments).join(' ');
+
           text = ansi_up.ansi_to_html(text);
-          el.innerHTML += '<samp>' + text + '</samp>';
+
+          el.innerHTML += '<samp>' + text + '\n</samp>';
           el.scrollTop = el.scrollHeight;
         };
       })(),
@@ -512,22 +515,12 @@
       printErr: (function() {
         var el = document.getElementById('console');
         return function(text) {
-          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          var cls;
-          if ((text[0] === ':' && text.indexOf('(warning): ') !== -1) || text.indexOf('WARNING:') === 0) {
-            cls = 'warning';
-          } else if ((text[0] === ':' && text.indexOf('(error): ') !== -1) ||
-                     text.indexOf('ERROR:') === 0 ||
-                     text === 'Traceback (most recent call last):' ||
-                     text.indexOf('Error: ') > 1 ||
-                     text.indexOf('Exception: ') > 1 ||
-                     text.indexOf('  File "') === 0) {
-            cls = 'error';
-          }
-          el.innerHTML += cls
-            ? '<samp class="' + cls + '">' + text + '\n</samp>'
-            : '<samp>' + text + '\n</samp>';
+          if (arguments.length > 1)
+            text = Array.prototype.slice.call(arguments).join(' ');
+
+          text = ansi_up.ansi_to_html(text);
+
+          el.innerHTML += '<samp class="error">' + text + '\n</samp>';
           el.scrollTop = el.scrollHeight;
         };
       })(),
