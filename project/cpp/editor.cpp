@@ -120,9 +120,6 @@ EMSCRIPTEN_KEEPALIVE void stopPythonCode() {
         "free() \n"
         "gc.collect()\n"
     );
-
-    Py_Finalize();
-    loadPython();
 }
 
 EMSCRIPTEN_KEEPALIVE void runPythonCode(char *codeToExecute)
