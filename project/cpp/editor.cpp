@@ -93,8 +93,6 @@ EMSCRIPTEN_KEEPALIVE void loadPanda() {
     init_libpnmimagetypes();
     init_libwebgldisplay();
 
-    setup_ursina_emscripten();
-
     EM_ASM({
         Module.setStatus('Done!');
     });
@@ -122,13 +120,13 @@ EMSCRIPTEN_KEEPALIVE void stopPythonCode() {
         "free() \n"
         "gc.collect()\n"
     );
-
-    Py_Finalize();
-    loadPython();
 }
 
 EMSCRIPTEN_KEEPALIVE void runPythonCode(char *codeToExecute)
 {
+    // setup AFTER everything is ready
+    setup_ursina_emscripten();
+
     if (PyRun_SimpleString(codeToExecute)) {
         stopPythonCode();
     } else {
