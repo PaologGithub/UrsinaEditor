@@ -30,8 +30,8 @@ PY_MODULES = []
 
 # Panda modules / libraries
 PANDA_BUILT_DIR = "./project/emscripten/embuilt"
-PANDA_MODULES = ["core", "direct" ] #, "bullet"]
-PANDA_LIBS = ["libpanda", "libpandaexpress", "libp3dtool", "libp3dtoolconfig", "libp3webgldisplay", "libp3direct", "libp3openal_audio"]
+PANDA_MODULES = ["core", "direct", "bullet"]
+PANDA_LIBS = ["libpanda", "libpandaexpress", "libp3dtool", "libp3dtoolconfig", "libp3webgldisplay", "libp3direct", "libp3openal_audio", "libp3framework", "libpandabullet"]
 PANDA_STATIC = True # built with --static
 
 # Ursina module
