@@ -80,11 +80,14 @@ EMSCRIPTEN_KEEPALIVE void loadPanda() {
     PyDict_SetItemString(panda3d_dict, "direct", direct_module);
     PyDict_SetItemString(sys_modules, "panda3d.direct", direct_module);
 
-    //PyObject *physics_module = PyInit_physics();
-    //PyDict_SetItemString(panda3d_dict, "physics", physics_module);
+    // PyObject *physics_module = PyInit_physics();
+    // PyModule_AddStringConstant(physics_module, "__name__", "panda3d.physics");
+    // PyDict_SetItemString(panda3d_dict, "physics", physics_module);
+    // PyDict_SetItemString(sys_modules, "panda3d.physics", physics_module);
 
     PyDict_SetItemString(sys_modules, "panda3d.core", core_module);
     PyDict_SetItemString(sys_modules, "panda3d.direct", direct_module);
+    // PyDict_SetItemString(sys_modules, "panda3d.physics", physics_module);
 
     PyDict_SetItemString(sys_modules, "emscripten", PyInit_emscripten());
     PyDict_SetItemString(sys_modules, "browser", PyInit_browser());
